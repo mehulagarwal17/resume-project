@@ -1,11 +1,16 @@
+
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import React from "react";
+import WatchDemoModal from "./WatchDemoModal";
 
 const Hero = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [isDemoOpen, setIsDemoOpen] = React.useState(false);
 
   const handleGetStarted = () => {
     if (user) {
@@ -40,7 +45,12 @@ const Hero = () => {
               {user ? 'Go to Dashboard' : 'Start Free Analysis'}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 text-lg px-8 py-4">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50 text-lg px-8 py-4"
+              onClick={() => setIsDemoOpen(true)}
+            >
               Watch Demo
             </Button>
           </div>
@@ -61,6 +71,8 @@ const Hero = () => {
           </div>
         </div>
       </div>
+      {/* Watch Demo Modal */}
+      <WatchDemoModal open={isDemoOpen} onOpenChange={setIsDemoOpen} />
     </section>
   );
 };
