@@ -1,8 +1,22 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Star } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    if (user) {
+      // Navigate to dashboard or main app functionality
+      console.log("User is authenticated, navigate to dashboard");
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <section className="pt-20 pb-16 px-4">
       <div className="container mx-auto text-center">
@@ -24,8 +38,8 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-12">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4">
-              Start Free Analysis
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4" onClick={handleGetStarted}>
+              {user ? 'Go to Dashboard' : 'Start Free Analysis'}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 text-lg px-8 py-4">

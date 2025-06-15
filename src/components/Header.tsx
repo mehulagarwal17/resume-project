@@ -1,10 +1,25 @@
 
 import { Button } from "@/components/ui/button";
-import { FileText, Menu, X } from "lucide-react";
+import { FileText, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-blue-100 sticky top-0 z-50">
@@ -25,12 +40,31 @@ const Header = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-blue-600 hover:text-blue-700">
-              Sign In
-            </Button>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-              Get Started Free
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span>{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" className="text-blue-600 hover:text-blue-700" onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={() => navigate('/auth')}>
+                  Get Started Free
+                </Button>
+              </>
+            )}
           </div>
 
           <button 
@@ -47,12 +81,21 @@ const Header = () => {
               <a href="#features" className="text-gray-700 hover:text-blue-600">Features</a>
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600">How It Works</a>
               <a href="#b2b" className="text-gray-700 hover:text-blue-600">For Businesses</a>
-              <Button variant="ghost" className="text-blue-600 justify-start px-0">
-                Sign In
-              </Button>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                Get Started Free
-              </Button>
+              {user ? (
+                <Button variant="ghost" className="justify-start px-0" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" className="text-blue-600 justify-start px-0" onClick={() => navigate('/auth')}>
+                    Sign In
+                  </Button>
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600" onClick={() => navigate('/auth')}>
+                    Get Started Free
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
