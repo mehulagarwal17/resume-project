@@ -1,12 +1,8 @@
 
-// Fixes: Ensure imports and exception handling are robust for deployment
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.6";
-// Fix pdfjs import: use a supported Deno module, fallback if needed
-import * as pdfjs from "https://esm.sh/pdfjs-dist@4.2.67/build/pdf.js?target=deno";
-// Fix mammoth import for Deno, use default if import fails
+import * as pdf from "https://deno.land/x/pdfjs@v4.0.0/mod.ts";
 import mammoth from "https://esm.sh/mammoth@1.3.25?target=deno";
 import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
@@ -26,18 +22,14 @@ function errorRes(message: string) {
   });
 }
 
-// Updated PDF extraction for pdfjs-dist compatibility
 async function extractTextFromPDF(uint8array: Uint8Array) {
   try {
-    const loadingTask = pdfjs.getDocument({ data: uint8array });
-    const doc = await loadingTask.promise;
+    const doc = await pdf.getDocument({ data: uint8array }).promise;
     let text = "";
     for (let i = 1; i <= doc.numPages; ++i) {
       const page = await doc.getPage(i);
       const content = await page.getTextContent();
-      if (content.items) {
-        text += content.items.map((item: any) => item.str ?? "").join(" ") + "\n";
-      }
+      text += content.items.map((item: any) => item.str).join(" ") + "\n";
     }
     return text;
   } catch (err) {
@@ -47,6 +39,7 @@ async function extractTextFromPDF(uint8array: Uint8Array) {
 
 async function extractTextFromDocx(arrayBuffer: ArrayBuffer) {
   try {
+    // mammoth expects ArrayBuffer, Deno returns Uint8Array -> ArrayBuffer
     const { value } = await mammoth.extractRawText({ arrayBuffer });
     return value;
   } catch (err) {
@@ -57,11 +50,11 @@ async function extractTextFromDocx(arrayBuffer: ArrayBuffer) {
 async function fetchFile(client: any, filePath: string) {
   const { data, error } = await client.storage.from("resumes").download(filePath);
   if (error || !data) throw new Error(`Failed to fetch file: ${error?.message}`);
+  // Deno stream to Uint8Array
   const buf = await new Response(data).arrayBuffer();
   return new Uint8Array(buf);
 }
 
-// Main Edge Function Handler
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -71,17 +64,10 @@ serve(async (req) => {
       return errorRes("Required secrets missing. Check Supabase/OPENAI keys.");
     }
     const client = createClient(supabaseUrl, supabaseServiceRoleKey);
-    // Use .json() for request body, handle parse errors
-    let file_url: string | undefined;
-    try {
-      const body = await req.json();
-      file_url = body.file_url;
-    } catch {
-      return errorRes("Invalid JSON body.");
-    }
+    const { file_url } = await req.json();
     if (!file_url) return errorRes("No file_url provided.");
 
-    // Extract user_id from file path (format: user_id/timestamp.ext)
+    // Try to extract user id from file path (format: user_id/timestamp.ext)
     const re = /^([^/]+)\//;
     const match = file_url.match(re);
     if (!match) return errorRes("File path invalid.");
@@ -113,7 +99,6 @@ Return your reply as JSON:
   "feedback": "<your feedback>"
 }
 `;
-
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
