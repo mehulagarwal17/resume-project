@@ -7,8 +7,14 @@ import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 // Import PDF parsing module for Deno
 import * as pdfjs from "https://esm.sh/pdfjs-dist@4.2.67/build/pdf.mjs";
 
-// Fix: Disable external worker for pdfjs (Edge runtime does not support workers)
-pdfjs.GlobalWorkerOptions.workerSrc = undefined;
+// Defensive configure workerSrc if possible
+try {
+  if (pdfjs.GlobalWorkerOptions) {
+    pdfjs.GlobalWorkerOptions.workerSrc = undefined;
+  }
+} catch (err) {
+  console.error("Failed to set pdfjs workerSrc:", err);
+}
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -19,16 +25,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function errorRes(message: string) {
+function errorRes(message: string, status = 500) {
+  console.error("[EdgeFn Error]", message);
   return new Response(JSON.stringify({ error: message }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
-    status: 500,
+    status,
   });
 }
 
 async function fetchFile(client: any, filePath: string) {
+  // Bucket check (cannot really check for bucket existence directly, but inform if error)
   const { data, error } = await client.storage.from("resumes").download(filePath);
-  if (error || !data) throw new Error(`Failed to fetch file: ${error?.message}`);
+  if (error || !data) throw new Error(`Failed to fetch file from Supabase Storage. ${error?.message || "Did you create the 'resumes' bucket?"}`);
   const buf = await new Response(data).arrayBuffer();
   return new Uint8Array(buf);
 }
@@ -103,42 +111,60 @@ serve(async (req) => {
   }
   try {
     if (!supabaseUrl || !supabaseServiceRoleKey || !openAIApiKey) {
-      return errorRes("Required secrets missing. Check Supabase/OPENAI keys.");
+      return errorRes("Required secrets missing. Check Supabase/OPENAI keys.", 500);
     }
     const client = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const { file_url } = await req.json();
-    if (!file_url) return errorRes("No file_url provided.");
+    let incoming;
+    try {
+      incoming = await req.json();
+    } catch {
+      return errorRes("Body must be valid JSON", 400);
+    }
 
-    // Try to extract user id from file path (format: user_id/timestamp.ext)
+    const { file_url } = incoming || {};
+    if (!file_url) return errorRes("No file_url provided.", 400);
+
     const re = /^([^/]+)\//;
     const match = file_url.match(re);
-    if (!match) return errorRes("File path invalid.");
+    if (!match) return errorRes("File path invalid.", 400);
     const user_id = match[1];
 
-    // Download file from storage
-    const fileBytes = await fetchFile(client, file_url);
+    let fileBytes: Uint8Array;
+    try {
+      fileBytes = await fetchFile(client, file_url);
+    } catch (err) {
+      return errorRes("Could not fetch file: " + err.message, 400);
+    }
 
     if (file_url.endsWith(".pdf")) {
-      // Extract text and run AI analysis for PDF files
-      const pdfText = await extractPdfText(fileBytes);
-      if (!pdfText || !pdfText.trim()) {
-        return errorRes("Could not extract any text from your PDF. Try a differently formatted PDF.");
+      let pdfText: string;
+      try {
+        pdfText = await extractPdfText(fileBytes);
+      } catch (err) {
+        return errorRes("Failed to extract text from PDF: " + err.message, 400);
       }
-      const analysisResult = await analyzeResumeWithAI(pdfText);
+      if (!pdfText || !pdfText.trim()) {
+        return errorRes("Could not extract any text from your PDF. Try a differently formatted PDF.", 400);
+      }
+      let analysisResult;
+      try {
+        analysisResult = await analyzeResumeWithAI(pdfText);
+      } catch (err) {
+        return errorRes("AI analysis failed: " + err.message, 500);
+      }
       return new Response(JSON.stringify(analysisResult), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     } else if (file_url.endsWith(".docx")) {
-      // This code path is intentionally left "unavailable" since extracting DOCX in Edge Functions is not implemented yet.
-      return errorRes("DOCX analysis is temporarily unavailable. Please try again later.");
+      return errorRes("DOCX analysis is temporarily unavailable. Please try again later.", 400);
     } else {
-      return errorRes("Unsupported file type. Only PDF and DOCX are supported.");
+      return errorRes("Unsupported file type. Only PDF and DOCX are supported.", 400);
     }
 
   } catch (error) {
-    console.error("analyze-resume error:", error);
+    console.error("[EdgeFn top-level error]:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
