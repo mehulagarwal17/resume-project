@@ -1,4 +1,3 @@
-
 // @deno-types="npm:@types/pdf-lib"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -27,6 +26,23 @@ function getRandomPricing(): { plan: string; price: number }[] {
       price: price + Math.floor(Math.random() * 40) // 0-39 extra
     })
   );
+}
+
+// Helper: base64 encode Uint8Array
+function toBase64(u8: Uint8Array): string {
+  // Web API (Deno) compatible base64
+  if (typeof Buffer !== "undefined") {
+    // Node
+    return Buffer.from(u8).toString("base64");
+  } else if (typeof btoa !== "undefined") {
+    // Browser
+    let binary = "";
+    for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
+    return btoa(binary);
+  } else {
+    // Deno
+    return btoa(String.fromCharCode(...u8));
+  }
 }
 
 async function generatePricingPDF(pricing: { plan: string; price: number }[]): Promise<Uint8Array> {
@@ -67,7 +83,10 @@ serve(async (req) => {
     const pricing = getRandomPricing();
     const pdfBytes = await generatePricingPDF(pricing);
 
-    // Send email with PDF attached
+    // Encode the Uint8Array to Base64 for the attachment
+    const pdfBase64 = toBase64(pdfBytes);
+
+    // Send email with PDF attached (encoded as base64 string)
     const emailResponse = await resend.emails.send({
       from: "Lovable Pricing <onboarding@resend.dev>",
       to: [email],
@@ -76,8 +95,9 @@ serve(async (req) => {
       attachments: [
         {
           filename: "pricing-quote.pdf",
-          content: pdfBytes,
+          content: pdfBase64,
           contentType: "application/pdf",
+          contentDisposition: "attachment",
         },
       ],
     });
