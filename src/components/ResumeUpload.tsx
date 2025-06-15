@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,12 +41,27 @@ const ResumeUpload = () => {
     }
     toast.success("Upload successful! Analyzing resume...");
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("analyze-resume", {
-        body: { file_url: data?.path },
-      });
-      if (fnError) {
-        toast.error("AI analysis failed: " + fnError.message);
-      } else if (result?.ats_score != null) {
+      // Try/catch around analyze resume for improved error reporting
+      let analysisResult = null;
+      let analysisError = null;
+      try {
+        const result = await supabase.functions.invoke("analyze-resume", {
+          body: { file_url: data?.path },
+        });
+        // result: { data, error }
+        if (result.error || (result.data && result.data.error)) {
+          // Function invocation or JSON error
+          analysisError = result.error?.message || result.data?.error || "Unknown Edge Function failure";
+        } else {
+          analysisResult = result.data;
+        }
+      } catch (e: any) {
+        analysisError = e?.message || "Exception during Edge Function invocation";
+      }
+
+      if (analysisError) {
+        toast.error("AI analysis failed: " + analysisError);
+      } else if (analysisResult?.ats_score != null) {
         // Insert into resume_scores client-side
         const { error: insertError } = await supabase
           .from("resume_scores")
@@ -55,8 +69,8 @@ const ResumeUpload = () => {
             {
               user_id: user?.id,
               file_url: data?.path,
-              ats_score: result.ats_score,
-              feedback: result.feedback,
+              ats_score: analysisResult.ats_score,
+              feedback: analysisResult.feedback,
             },
           ]);
         if (insertError) {
@@ -67,8 +81,8 @@ const ResumeUpload = () => {
       } else {
         toast.error("Unexpected analysis result.");
       }
-    } catch (e) {
-      toast.error("Unexpected error during analysis.");
+    } catch (e: any) {
+      toast.error("Unexpected error during analysis: " + (e?.message || e));
     }
     setUploading(false);
     setFile(null);
