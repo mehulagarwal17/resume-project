@@ -39,18 +39,16 @@ const ResumeUpload = () => {
       setUploading(false);
       return;
     }
+    toast("150 rupiya legaa!");
     toast.success("Upload successful! Analyzing resume...");
     try {
-      // Try/catch around analyze resume for improved error reporting
       let analysisResult = null;
       let analysisError = null;
       try {
         const result = await supabase.functions.invoke("analyze-resume", {
           body: { file_url: data?.path },
         });
-        // result: { data, error }
         if (result.error || (result.data && result.data.error)) {
-          // Function invocation or JSON error
           analysisError = result.error?.message || result.data?.error || "Unknown Edge Function failure";
         } else {
           analysisResult = result.data;
@@ -62,7 +60,6 @@ const ResumeUpload = () => {
       if (analysisError) {
         toast.error("AI analysis failed: " + analysisError);
       } else if (analysisResult?.ats_score != null) {
-        // Insert into resume_scores client-side
         const { error: insertError } = await supabase
           .from("resume_scores")
           .insert([
