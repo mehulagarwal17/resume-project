@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building, Users, BarChart, Shield, ArrowRight } from "lucide-react";
+import React from "react";
+import ScheduleDemoModal from "./ScheduleDemoModal";
 
 const B2BSection = () => {
+  const [isScheduleDemoOpen, setIsScheduleDemoOpen] = React.useState(false);
+
   const benefits = [
     {
       icon: Users,
@@ -64,7 +68,11 @@ const B2BSection = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50">
+              <Button
+                size="lg"
+                className="bg-white text-blue-900 hover:bg-blue-50"
+                onClick={() => setIsScheduleDemoOpen(true)}
+              >
                 Schedule Demo
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -94,9 +102,12 @@ const B2BSection = () => {
             ))}
           </div>
         </div>
+        {/* Schedule Demo Modal */}
+        <ScheduleDemoModal open={isScheduleDemoOpen} onOpenChange={setIsScheduleDemoOpen} />
       </div>
     </section>
   );
 };
 
 export default B2BSection;
+
