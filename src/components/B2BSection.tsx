@@ -5,11 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Building, Users, BarChart, Shield, ArrowRight } from "lucide-react";
 import React from "react";
 import ScheduleDemoModal from "./ScheduleDemoModal";
-import RequestPricingModal from "./RequestPricingModal";
+// Remove RequestPricingModal since it's not needed anymore
+// import RequestPricingModal from "./RequestPricingModal";
 
 const B2BSection = () => {
   const [isScheduleDemoOpen, setIsScheduleDemoOpen] = React.useState(false);
-  const [isRequestPricingOpen, setIsRequestPricingOpen] = React.useState(false);
+  // Remove request pricing modal state since we're replacing it with static text
+  // const [isRequestPricingOpen, setIsRequestPricingOpen] = React.useState(false);
 
   const benefits = [
     {
@@ -78,14 +80,15 @@ const B2BSection = () => {
                 Schedule Demo
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-blue-900"
-                onClick={() => setIsRequestPricingOpen(true)}
+              {/* Static navy blue "View Pricing" Button */}
+              <button
+                type="button"
+                className="h-11 rounded-md px-8 bg-white text-blue-900 font-medium border border-white cursor-default shadow-none"
+                tabIndex={-1}
+                style={{ pointerEvents: 'none' }} // disables all interaction
               >
-                Request Pricing
-              </Button>
+                View Pricing
+              </button>
             </div>
           </div>
 
@@ -111,11 +114,11 @@ const B2BSection = () => {
         </div>
         {/* Schedule Demo Modal */}
         <ScheduleDemoModal open={isScheduleDemoOpen} onOpenChange={setIsScheduleDemoOpen} />
-        {/* Request Pricing Modal */}
-        <RequestPricingModal open={isRequestPricingOpen} onOpenChange={setIsRequestPricingOpen} />
+        {/* Request Pricing Modal removed */}
       </div>
     </section>
   );
 };
 
 export default B2BSection;
+
