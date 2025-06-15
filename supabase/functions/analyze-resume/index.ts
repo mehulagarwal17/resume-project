@@ -1,7 +1,7 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.6";
-import * as pdf from "https://deno.land/x/pdfjs@v4.0.0/mod.ts";
 import mammoth from "https://esm.sh/mammoth@1.3.25?target=deno";
 import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
@@ -19,21 +19,6 @@ function errorRes(message: string) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
     status: 500,
   });
-}
-
-async function extractTextFromPDF(uint8array: Uint8Array) {
-  try {
-    const doc = await pdf.getDocument({ data: uint8array }).promise;
-    let text = "";
-    for (let i = 1; i <= doc.numPages; ++i) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      text += content.items.map((item: any) => item.str).join(" ") + "\n";
-    }
-    return text;
-  } catch (err) {
-    throw new Error(`Failed to extract PDF text: ${err.message}`);
-  }
 }
 
 async function extractTextFromDocx(arrayBuffer: ArrayBuffer) {
@@ -76,11 +61,12 @@ serve(async (req) => {
     const fileBytes = await fetchFile(client, file_url);
     let fileText = "";
     if (file_url.endsWith(".pdf")) {
-      fileText = await extractTextFromPDF(fileBytes);
+      // PDF not supported: error out
+      return errorRes("PDF analysis is temporarily unavailable. Please upload a DOCX file.");
     } else if (file_url.endsWith(".docx")) {
       fileText = await extractTextFromDocx(fileBytes.buffer);
     } else {
-      return errorRes("Unsupported file type.");
+      return errorRes("Unsupported file type. Only DOCX is currently supported.");
     }
 
     // Prompt OpenAI for ATS scoring and feedback
