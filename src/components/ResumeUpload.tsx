@@ -41,15 +41,31 @@ const ResumeUpload = () => {
       return;
     }
     toast.success("Upload successful! Analyzing resume...");
-    // Call edge function for AI scoring (implement function next step)
     try {
       const { data: result, error: fnError } = await supabase.functions.invoke("analyze-resume", {
         body: { file_url: data?.path },
       });
       if (fnError) {
         toast.error("AI analysis failed: " + fnError.message);
+      } else if (result?.ats_score != null) {
+        // Insert into resume_scores client-side
+        const { error: insertError } = await supabase
+          .from("resume_scores")
+          .insert([
+            {
+              user_id: user?.id,
+              file_url: data?.path,
+              ats_score: result.ats_score,
+              feedback: result.feedback,
+            },
+          ]);
+        if (insertError) {
+          toast.error("Saving analysis failed: " + insertError.message);
+        } else {
+          toast.success("Resume analyzed!");
+        }
       } else {
-        toast.success("Resume analyzed!");
+        toast.error("Unexpected analysis result.");
       }
     } catch (e) {
       toast.error("Unexpected error during analysis.");

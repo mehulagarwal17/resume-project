@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.6";
@@ -136,20 +135,7 @@ Return your reply as JSON:
       }
     } catch (_e) {}
 
-    // Save results to the resume_scores table
-    const { error: dbError } = await client
-      .from("resume_scores")
-      .insert([
-        {
-          user_id,
-          file_url,
-          ats_score,
-          feedback,
-        },
-      ]);
-    if (dbError) throw new Error("DB Save Error: " + dbError.message);
-
-    // Response for frontend
+    // Do NOT save to database. Only return to frontend.
     return new Response(
       JSON.stringify({
         ats_score,
