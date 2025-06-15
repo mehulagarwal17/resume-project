@@ -28,10 +28,8 @@ const Auth = () => {
       if (isSignUp) {
         result = await signUp(email, password, fullName);
         if (!result.error) {
-          toast({
-            title: 'Account created!',
-            description: 'Please check your email to verify your account.',
-          });
+          navigate('/');
+          return;
         }
       } else {
         result = await signIn(email, password);
@@ -64,7 +62,7 @@ const Auth = () => {
         <div className="flex items-center justify-center mb-8">
           <FileText className="h-8 w-8 text-blue-600 mr-2" />
           <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            ResumeAI Pro
+            Resumehul.Ai
           </span>
         </div>
 
