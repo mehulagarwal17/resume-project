@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +9,7 @@ const Hero = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      // Navigate to dashboard or main app functionality
-      console.log("User is authenticated, navigate to dashboard");
+      navigate('/dashboard');
     } else {
       navigate('/auth');
     }

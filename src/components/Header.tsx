@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { FileText, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -60,8 +59,8 @@ const Header = () => {
                 <Button variant="ghost" className="text-blue-600 hover:text-blue-700" onClick={() => navigate('/auth')}>
                   Sign In
                 </Button>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={() => navigate('/auth')}>
-                  Get Started Free
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
+                  {user ? "Dashboard" : "Get Started Free"}
                 </Button>
               </>
             )}
@@ -91,8 +90,8 @@ const Header = () => {
                   <Button variant="ghost" className="text-blue-600 justify-start px-0" onClick={() => navigate('/auth')}>
                     Sign In
                   </Button>
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600" onClick={() => navigate('/auth')}>
-                    Get Started Free
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
+                    {user ? "Dashboard" : "Get Started Free"}
                   </Button>
                 </>
               )}
