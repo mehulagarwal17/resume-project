@@ -24,61 +24,56 @@ const RequestPricingModal: React.FC<RequestPricingModalProps> = ({
 }) => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = React.useState(false);
-  const [values, setValues] = React.useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [touched, setTouched] = React.useState({
-    name: false,
-    email: false,
-  });
+  const [email, setEmail] = React.useState("");
+  const [touched, setTouched] = React.useState(false);
   const [submitted, setSubmitted] = React.useState(false);
+  const [error, setError] = React.useState("");
 
-  const hasError = {
-    name: touched.name && !values.name.trim(),
-    email:
-      touched.email &&
-      (!values.email.trim() ||
-        !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$/.test(values.email)),
-  };
-
-  const isFormValid = !hasError.name && !hasError.email && values.name && values.email;
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setValues((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setTouched((prev) => ({
-      ...prev,
-      [e.target.name]: true,
-    }));
-  };
+  const hasError =
+    touched &&
+    (!email.trim() ||
+      !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$/.test(email));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ name: true, email: true });
-    if (!isFormValid) return;
-    setSubmitting(true);
+    setTouched(true);
+    setError("");
+    if (hasError) return;
 
-    setTimeout(() => {
+    setSubmitting(true);
+    try {
+      // Call Supabase Edge Function to send PDF
+      const res = await fetch(
+        "https://nghmvumdtbijhhhksfrn.supabase.co/functions/v1/send-pricing-pdf",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+        toast({
+          title: "Pricing sent!",
+          description: "A custom pricing PDF has been emailed to you.",
+        });
+        setTimeout(() => {
+          setEmail("");
+          setTouched(false);
+          setSubmitted(false);
+          onOpenChange(false);
+        }, 2000);
+      } else {
+        setError(data.error || "Something went wrong. Please try again.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to send email.");
+    } finally {
       setSubmitting(false);
-      setSubmitted(true);
-      toast({
-        title: "Request sent!",
-        description: "Our team will reach out to you soon regarding pricing.",
-      });
-      setTimeout(() => {
-        setValues({ name: "", email: "", message: "" });
-        setTouched({ name: false, email: false });
-        setSubmitted(false);
-        onOpenChange(false);
-      }, 1000);
-    }, 1000);
+    }
   };
 
   return (
@@ -87,7 +82,7 @@ const RequestPricingModal: React.FC<RequestPricingModalProps> = ({
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle>Request Pricing</DialogTitle>
           <DialogDescription>
-            Fill out the form and our team will contact you with a personalized quote.
+            Enter your email to instantly receive a PDF with your custom pricing quote.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -96,62 +91,36 @@ const RequestPricingModal: React.FC<RequestPricingModalProps> = ({
           autoComplete="off"
         >
           <div>
-            <Label htmlFor="pricing-name">Your Name</Label>
-            <Input
-              id="pricing-name"
-              name="name"
-              value={values.name}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={submitting}
-              required
-              placeholder="Enter your name"
-            />
-            {hasError.name && (
-              <p className="text-xs text-destructive mt-1">Name is required.</p>
-            )}
-          </div>
-          <div>
             <Label htmlFor="pricing-email">Email</Label>
             <Input
               id="pricing-email"
               name="email"
               type="email"
-              value={values.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={submitting}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onBlur={() => setTouched(true)}
+              disabled={submitting || submitted}
               required
               placeholder="you@email.com"
               autoComplete="email"
             />
-            {hasError.email && (
+            {hasError && (
               <p className="text-xs text-destructive mt-1">Valid email required.</p>
             )}
-          </div>
-          <div>
-            <Label htmlFor="pricing-message">Message/Notes (optional)</Label>
-            <textarea
-              id="pricing-message"
-              name="message"
-              rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
-              value={values.message}
-              onChange={handleChange}
-              disabled={submitting}
-              placeholder="Any specific needs or questions?"
-            />
+            {error && (
+              <p className="text-xs text-destructive mt-1">{error}</p>
+            )}
           </div>
           <Button
             type="submit"
-            disabled={submitting || !isFormValid}
+            disabled={submitting || !email || hasError || submitted}
             className="w-full mt-2"
           >
             {submitting ? "Sending..." : "Request Pricing"}
           </Button>
           {submitted && (
             <div className="text-green-600 text-sm text-center mt-2">
-              Request sent! Closing...
+              Success! Your pricing PDF has been emailed.
             </div>
           )}
         </form>
