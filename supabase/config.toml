@@ -1,1 +1,4 @@
 project_id = "nghmvumdtbijhhhksfrn"
+
+[functions.send-pricing-pdf]
+verify_jwt = false
