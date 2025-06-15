@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { FileText, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -48,7 +47,7 @@ const Header = () => {
           <div className="flex items-center space-x-2">
             <FileText className="h-8 w-8 text-blue-600" />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ResumeAI Pro
+              Resumehul.Ai
             </span>
           </div>
           

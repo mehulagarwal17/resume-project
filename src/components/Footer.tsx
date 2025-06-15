@@ -1,4 +1,3 @@
-
 import { FileText, Twitter, Linkedin, Github, Mail } from "lucide-react";
 
 const Footer = () => {
@@ -9,7 +8,7 @@ const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <FileText className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold">ResumeAI Pro</span>
+              <span className="text-2xl font-bold">Resumehul.Ai</span>
             </div>
             <p className="text-gray-400 leading-relaxed">
               AI-powered resume optimization platform helping job seekers and institutions achieve better placement outcomes.
@@ -55,7 +54,7 @@ const Footer = () => {
 
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2024 ResumeAI Pro. All rights reserved.
+            © 2024 Resumehul.Ai. All rights reserved.
           </p>
           <div className="flex space-x-6 text-sm text-gray-400 mt-4 md:mt-0">
             <a href="#" className="hover:text-white transition-colors">Privacy</a>
