@@ -7,6 +7,9 @@ import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 // Import PDF parsing module for Deno
 import * as pdfjs from "https://esm.sh/pdfjs-dist@4.2.67/build/pdf.mjs";
 
+// Fix: Disable external worker for pdfjs (Edge runtime does not support workers)
+pdfjs.GlobalWorkerOptions.workerSrc = undefined;
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
