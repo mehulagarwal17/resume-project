@@ -1,3 +1,4 @@
+
 // @deno-types="npm:@types/pdf-lib"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -86,9 +87,12 @@ serve(async (req) => {
     // Encode the Uint8Array to Base64 for the attachment
     const pdfBase64 = toBase64(pdfBytes);
 
+    // CHANGE THIS to your verified sender email (see Resend docs!)
+    const VERIFIED_SENDER = "pricing@yourdomain.com"; // <-- Replace with your Resend-verified domain email
+
     // Send email with PDF attached (encoded as base64 string)
     const emailResponse = await resend.emails.send({
-      from: "Lovable Pricing <onboarding@resend.dev>",
+      from: `Lovable Pricing <${VERIFIED_SENDER}>`,
       to: [email],
       subject: "Your Custom Pricing Quote",
       html: `<p>Thank you for requesting pricing!<br/>Please find your custom pricing PDF attached.</p>`,
@@ -103,9 +107,16 @@ serve(async (req) => {
     });
 
     if ("error" in emailResponse && emailResponse.error) {
+      // Log the full resend error and pass details to the client for easier debugging
       console.error("Resend error", emailResponse.error);
-      return new Response(JSON.stringify({ error: "Failed to send email." }),
-        { status: 500, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({
+          error:
+            "Failed to send email. You may need to verify your sender domain in Resend and use a sender email from your own domain. Full error: " +
+            (emailResponse.error.message || emailResponse.error)
+        }),
+        { status: 500, headers: corsHeaders }
+      );
     }
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
   } catch (e: any) {
