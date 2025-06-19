@@ -1,4 +1,3 @@
-
 // @deno-types="npm:@types/pdf-lib"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -87,8 +86,8 @@ serve(async (req) => {
     // Encode the Uint8Array to Base64 for the attachment
     const pdfBase64 = toBase64(pdfBytes);
 
-    // CHANGE THIS to your verified sender email (see Resend docs!)
-    const VERIFIED_SENDER = "pricing@yourdomain.com"; // <-- Replace with your Resend-verified domain email
+    // Use the default Resend sender that works
+    const VERIFIED_SENDER = "onboarding@resend.dev";
 
     // Send email with PDF attached (encoded as base64 string)
     const emailResponse = await resend.emails.send({
@@ -111,9 +110,7 @@ serve(async (req) => {
       console.error("Resend error", emailResponse.error);
       return new Response(
         JSON.stringify({
-          error:
-            "Failed to send email. You may need to verify your sender domain in Resend and use a sender email from your own domain. Full error: " +
-            (emailResponse.error.message || emailResponse.error)
+          error: "Failed to send email: " + (emailResponse.error.message || emailResponse.error)
         }),
         { status: 500, headers: corsHeaders }
       );
